@@ -172,6 +172,13 @@ func resourceArmKubernetesClusterNodePool() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: azure.ValidateResourceID,
 			},
+
+			"orchestrator_version": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringIsNotEmpty,
+			},
 		},
 	}
 }
@@ -246,6 +253,11 @@ func resourceArmKubernetesClusterNodePoolCreate(d *schema.ResourceData, meta int
 
 		// this must always be sent during creation, but is optional for auto-scaled clusters during update
 		Count: utils.Int32(int32(count)),
+	}
+
+	orchestratorVersion := d.Get("orchestrator_version").(string)
+	if orchestratorVersion != "" {
+		profile.OrchestratorVersion = utils.String(orchestratorVersion)
 	}
 
 	availabilityZonesRaw := d.Get("availability_zones").([]interface{})
@@ -340,6 +352,7 @@ func resourceArmKubernetesClusterNodePoolCreate(d *schema.ResourceData, meta int
 }
 
 func resourceArmKubernetesClusterNodePoolUpdate(d *schema.ResourceData, meta interface{}) error {
+
 	client := meta.(*clients.Client).Containers.AgentPoolsClient
 	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
 	defer cancel()
@@ -411,6 +424,10 @@ func resourceArmKubernetesClusterNodePoolUpdate(d *schema.ResourceData, meta int
 	if d.HasChange("tags") {
 		t := d.Get("tags").(map[string]interface{})
 		props.Tags = tags.Expand(t)
+	}
+
+	if d.HasChange("orchestrator_version") {
+		props.OrchestratorVersion = utils.String(d.Get("orchestrator_version").(string))
 	}
 
 	// validate the auto-scale fields are both set/unset to prevent a continual diff
@@ -557,6 +574,10 @@ func resourceArmKubernetesClusterNodePoolRead(d *schema.ResourceData, meta inter
 
 		d.Set("vnet_subnet_id", props.VnetSubnetID)
 		d.Set("vm_size", string(props.VMSize))
+
+		if props.OrchestratorVersion != nil {
+			d.Set("orchestrator_version", string(*props.OrchestratorVersion))
+		}
 	}
 
 	return tags.FlattenAndSet(d, resp.Tags)

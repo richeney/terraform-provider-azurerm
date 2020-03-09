@@ -145,6 +145,12 @@ func SchemaDefaultNodePool() *schema.Schema {
 					ForceNew:     true,
 					ValidateFunc: azure.ValidateResourceID,
 				},
+				"orchestrator_version": {
+					Type:         schema.TypeString,
+					Optional:     true,
+					Computed:     true,
+					ValidateFunc: validation.StringIsNotEmpty,
+				},
 			},
 		},
 	}
@@ -227,6 +233,10 @@ func ExpandDefaultNodePool(d *schema.ResourceData) (*[]containerservice.ManagedC
 
 	if vnetSubnetID := raw["vnet_subnet_id"].(string); vnetSubnetID != "" {
 		profile.VnetSubnetID = utils.String(vnetSubnetID)
+	}
+
+	if orchestratorVersion := raw["orchestrator_version"].(string); orchestratorVersion != "" {
+		profile.OrchestratorVersion = utils.String(orchestratorVersion)
 	}
 
 	count := raw["node_count"].(int)
@@ -354,6 +364,11 @@ func FlattenDefaultNodePool(input *[]containerservice.ManagedClusterAgentPoolPro
 		vnetSubnetId = *agentPool.VnetSubnetID
 	}
 
+	orchestratorVersion := ""
+	if agentPool.OrchestratorVersion != nil {
+		orchestratorVersion = *agentPool.OrchestratorVersion
+	}
+
 	return &[]interface{}{
 		map[string]interface{}{
 			"availability_zones":    availabilityZones,
@@ -370,6 +385,7 @@ func FlattenDefaultNodePool(input *[]containerservice.ManagedClusterAgentPoolPro
 			"tags":                  tags.Flatten(agentPool.Tags),
 			"type":                  string(agentPool.Type),
 			"vm_size":               string(agentPool.VMSize),
+			"orchestrator_version":  string(orchestratorVersion),
 			"vnet_subnet_id":        vnetSubnetId,
 		},
 	}, nil

@@ -82,6 +82,10 @@ The following arguments are supported:
 
 * `node_taints` - (Optional) A list of Kubernetes taints which should be applied to nodes in the agent pool (e.g `key=value:NoSchedule`).
 
+* `orchestrator_version` - (Optional) Version of Kubernetes used for the Agents. If not specified, the latest recommended version will be used at provisioning time (but won't auto-upgrade)
+
+~> **Note:** See the [Kubernetes Documentation](https://kubernetes.io/docs/setup/release/version-skew-policy/) for more details around Kubernetes versioning requirements.
+
 * `os_disk_size_gb` - (Optional) The Agent Operating System disk size in GB. Changing this forces a new resource to be created.
 
 * `os_type` - (Optional) The Operating System which should be used for this Node Pool. Changing this forces a new resource to be created. Possible values are `Linux` and `Windows`. Defaults to `Linux`.
@@ -93,8 +97,6 @@ The following arguments are supported:
 * `tags` - (Optional) A mapping of tags to assign to the resource.
 
 ~> At this time there's a bug in the AKS API where Tags for a Node Pool are not stored in the correct case - you [may wish to use Terraform's `ignore_changes` functionality to ignore changes to the casing](https://www.terraform.io/docs/configuration/resources.html#ignore_changes) until this is fixed in the AKS API.
-
-* `orchestrator_version` - (Optional) Version of Kubernetes used for the Agents. If not specified, the latest recommended version will be used at provisioning time (but won't auto-upgrade)
 
 * `vnet_subnet_id` - (Optional) The ID of the Subnet where this Node Pool should exist.
 

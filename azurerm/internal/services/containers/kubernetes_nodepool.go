@@ -118,6 +118,13 @@ func SchemaDefaultNodePool() *schema.Schema {
 					Elem:     &schema.Schema{Type: schema.TypeString},
 				},
 
+				"orchestrator_version": {
+					Type:         schema.TypeString,
+					Optional:     true,
+					Computed:     true,
+					ValidateFunc: validation.StringIsNotEmpty,
+				},
+
 				"os_disk_size_gb": {
 					Type:         schema.TypeInt,
 					Optional:     true,
@@ -144,12 +151,6 @@ func SchemaDefaultNodePool() *schema.Schema {
 					Optional:     true,
 					ForceNew:     true,
 					ValidateFunc: azure.ValidateResourceID,
-				},
-				"orchestrator_version": {
-					Type:         schema.TypeString,
-					Optional:     true,
-					Computed:     true,
-					ValidateFunc: validation.StringIsNotEmpty,
 				},
 			},
 		},

@@ -91,6 +91,7 @@ func TestAccAzureRMKubernetes_all(t *testing.T) {
 			"nodeTaints":                     testAccAzureRMKubernetesCluster_nodeTaints,
 			"nodeResourceGroup":              testAccAzureRMKubernetesCluster_nodeResourceGroup,
 			"upgradeConfig":                  testAccAzureRMKubernetesCluster_upgrade,
+			"upgradeConfigNodePool":          testAccAzureRMKubernetesCluster_upgradeNodePool,
 			"tags":                           testAccAzureRMKubernetesCluster_tags,
 			"windowsProfile":                 testAccAzureRMKubernetesCluster_windowsProfile,
 			"outboundTypeLoadBalancer":       testAccAzureRMKubernetesCluster_outboundTypeLoadBalancer,

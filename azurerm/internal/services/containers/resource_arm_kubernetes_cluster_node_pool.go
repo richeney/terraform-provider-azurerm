@@ -421,13 +421,13 @@ func resourceArmKubernetesClusterNodePoolUpdate(d *schema.ResourceData, meta int
 		props.NodeTaints = nodeTaints
 	}
 
+	if d.HasChange("orchestrator_version") {
+		props.OrchestratorVersion = utils.String(d.Get("orchestrator_version").(string))
+	}
+
 	if d.HasChange("tags") {
 		t := d.Get("tags").(map[string]interface{})
 		props.Tags = tags.Expand(t)
-	}
-
-	if d.HasChange("orchestrator_version") {
-		props.OrchestratorVersion = utils.String(d.Get("orchestrator_version").(string))
 	}
 
 	// validate the auto-scale fields are both set/unset to prevent a continual diff

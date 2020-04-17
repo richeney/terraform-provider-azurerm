@@ -74,6 +74,8 @@ func TestAccAzureRMKubernetes_all(t *testing.T) {
 			"nodeTaints":                     testAccAzureRMKubernetesClusterNodePool_nodeTaints,
 			"requiresImport":                 testAccAzureRMKubernetesClusterNodePool_requiresImport,
 			"osDiskSizeGB":                   testAccAzureRMKubernetesClusterNodePool_osDiskSizeGB,
+			"spotDeallocate":                 testAccAzureRMKubernetesClusterNodePool_spotDeallocate,
+			"spotDestroy":                    testAccAzureRMKubernetesClusterNodePool_spotDestroy,
 			"virtualNetworkAutomatic":        testAccAzureRMKubernetesClusterNodePool_virtualNetworkAutomatic,
 			"virtualNetworkManual":           testAccAzureRMKubernetesClusterNodePool_virtualNetworkManual,
 			"windows":                        testAccAzureRMKubernetesClusterNodePool_windows,

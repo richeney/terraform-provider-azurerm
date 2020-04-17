@@ -191,6 +191,8 @@ func testAccAzureRMKubernetesClusterNodePool_manualScale(t *testing.T) {
 				Config: testAccAzureRMKubernetesClusterNodePool_manualScaleConfig(data),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckAzureRMKubernetesNodePoolExists(data.ResourceName),
+					resource.TestCheckResourceAttr(data.ResourceName, "eviction_policy", ""),
+					resource.TestCheckResourceAttr(data.ResourceName, "priority", "Regular"),
 				),
 			},
 			data.ImportStep(),
@@ -510,6 +512,58 @@ func testAccAzureRMKubernetesClusterNodePool_osDiskSizeGB(t *testing.T) {
 				Config: testAccAzureRMKubernetesClusterNodePool_osDiskSizeGBConfig(data),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckAzureRMKubernetesNodePoolExists(data.ResourceName),
+				),
+			},
+			data.ImportStep(),
+		},
+	})
+}
+
+func TestAccAzureRMKubernetesClusterNodePool_spotDeallocate(t *testing.T) {
+	checkIfShouldRunTestsIndividually(t)
+	testAccAzureRMKubernetesClusterNodePool_spotDeallocate(t)
+}
+
+func testAccAzureRMKubernetesClusterNodePool_spotDeallocate(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_kubernetes_cluster_node_pool", "test")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { acceptance.PreCheck(t) },
+		Providers:    acceptance.SupportedProviders,
+		CheckDestroy: testCheckAzureRMKubernetesClusterNodePoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAzureRMKubernetesClusterNodePool_spotConfig(data, "Deallocate"),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckAzureRMKubernetesNodePoolExists(data.ResourceName),
+					resource.TestCheckResourceAttr(data.ResourceName, "eviction_policy", "Deallocate"),
+					resource.TestCheckResourceAttr(data.ResourceName, "priority", "Spot"),
+				),
+			},
+			data.ImportStep(),
+		},
+	})
+}
+
+func TestAccAzureRMKubernetesClusterNodePool_spotDestroy(t *testing.T) {
+	checkIfShouldRunTestsIndividually(t)
+	testAccAzureRMKubernetesClusterNodePool_spotDestroy(t)
+}
+
+func testAccAzureRMKubernetesClusterNodePool_spotDestroy(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_kubernetes_cluster_node_pool", "test")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { acceptance.PreCheck(t) },
+		Providers:    acceptance.SupportedProviders,
+		CheckDestroy: testCheckAzureRMKubernetesClusterNodePoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAzureRMKubernetesClusterNodePool_spotConfig(data, "Destroy"),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckAzureRMKubernetesNodePoolExists(data.ResourceName),
+					resource.TestCheckResourceAttr(data.ResourceName, "eviction_policy", "Destroy"),
+					resource.TestCheckResourceAttr(data.ResourceName, "priority", "Spot"),
 				),
 			},
 			data.ImportStep(),
@@ -1194,6 +1248,28 @@ resource "azurerm_kubernetes_cluster_node_pool" "test" {
   os_disk_size_gb       = 100
 }
 `, template)
+}
+
+func testAccAzureRMKubernetesClusterNodePool_spotConfig(data acceptance.TestData, evictionPolicy string) string {
+	template := testAccAzureRMKubernetesClusterNodePool_templateConfig(data)
+	return fmt.Sprintf(`
+provider "azurerm" {
+  features {}
+}
+
+%s
+
+resource "azurerm_kubernetes_cluster_node_pool" "test" {
+  name                  = "internal"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.test.id
+  vm_size               = "Standard_DS2_v2"
+  enable_auto_scaling   = true
+  min_count             = 1
+  max_count             = 3
+  priority              = "Spot"
+  eviction_policy       = "%s"
+}
+`, template, evictionPolicy)
 }
 
 func testAccAzureRMKubernetesClusterNodePool_virtualNetworkAutomaticConfig(data acceptance.TestData) string {

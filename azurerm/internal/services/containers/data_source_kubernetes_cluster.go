@@ -181,23 +181,23 @@ func dataSourceArmKubernetesCluster() *schema.Resource {
 
 						"node_taints": {
 							Type:     schema.TypeList,
-							Optional: true,
+							Computed: true,
 							Elem:     &schema.Schema{Type: schema.TypeString},
 						},
 
 						"enable_node_public_ip": {
 							Type:     schema.TypeBool,
-							Optional: true,
+							Computed: true,
 						},
 
 						"priority": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Computed: true,
 						},
 
 						"eviction_policy": {
 							Type:     schema.TypeString,
-							Optional: true,
+							Computed: true,
 						},
 					},
 				},

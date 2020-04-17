@@ -735,6 +735,11 @@ func flattenKubernetesClusterDataSourceAgentPoolProfiles(input *[]containerservi
 			enableNodePublicIP = *profile.EnableNodePublicIP
 		}
 
+		evictionPolicy := ""
+		if profile.ScaleSetEvictionPolicy != "" {
+			evictionPolicy = string(profile.ScaleSetEvictionPolicy)
+		}
+
 		maxCount := 0
 		if profile.MaxCount != nil {
 			maxCount = int(*profile.MaxCount)
@@ -775,6 +780,11 @@ func flattenKubernetesClusterDataSourceAgentPoolProfiles(input *[]containerservi
 			osType = string(profile.OsType)
 		}
 
+		priority := string(containerservice.Regular)
+		if profile.ScaleSetPriority != "" {
+			priority = string(profile.ScaleSetPriority)
+		}
+
 		vmSize := ""
 		if profile.VMSize != "" {
 			vmSize = string(profile.VMSize)
@@ -790,6 +800,7 @@ func flattenKubernetesClusterDataSourceAgentPoolProfiles(input *[]containerservi
 			"count":                 count,
 			"enable_auto_scaling":   enableAutoScaling,
 			"enable_node_public_ip": enableNodePublicIP,
+			"eviction_policy":       evictionPolicy,
 			"max_count":             maxCount,
 			"min_count":             minCount,
 			"max_pods":              maxPods,
@@ -798,6 +809,7 @@ func flattenKubernetesClusterDataSourceAgentPoolProfiles(input *[]containerservi
 			"node_taints":           nodeTaints,
 			"os_disk_size_gb":       osDiskSizeGb,
 			"os_type":               osType,
+			"priority":              priority,
 			"tags":                  tags.Flatten(profile.Tags),
 			"type":                  agentPoolType,
 			"vm_size":               vmSize,

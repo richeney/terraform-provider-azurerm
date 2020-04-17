@@ -72,6 +72,10 @@ The following arguments are supported:
 
 * `enable_node_public_ip` - (Optional) Should each node have a Public IP Address? Defaults to `false`.
 
+* `eviction_policy` - (Optional) The Policy which should be used Virtual Machines are Evicted from the Node Pool. Changing this forces a new resource to be created.
+
+-> **Note:** This can only be configured when `priority` is set to `spot`
+
 * `max_pods` - (Optional) The maximum number of pods that can run on each agent. Changing this forces a new resource to be created.
 
 * `node_labels` - (Optional) A map of Kubernetes labels which should be applied to nodes in this Node Pool.
@@ -81,6 +85,10 @@ The following arguments are supported:
 * `os_disk_size_gb` - (Optional) The Agent Operating System disk size in GB. Changing this forces a new resource to be created.
 
 * `os_type` - (Optional) The Operating System which should be used for this Node Pool. Changing this forces a new resource to be created. Possible values are `Linux` and `Windows`. Defaults to `Linux`.
+
+* `priority` - (Optional) The Priority of the Virtual Machines in the Scale Set used for this Node Pool. Possible values are `Regular` and `Spot`. Defaults to `Regular`. Changing this value forces a new resource.
+
+-> **NOTE:** When `priority` is set to `Spot` an `eviction_policy` must be specified.
 
 * `tags` - (Optional) A mapping of tags to assign to the resource.
 

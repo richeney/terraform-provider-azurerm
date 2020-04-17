@@ -463,6 +463,50 @@ func testAccAzureRMKubernetesClusterNodePool_nodeTaints(t *testing.T) {
 	})
 }
 
+func TestAccAzureRMKubernetesClusterNodePool_orchestratorVersion(t *testing.T) {
+	checkIfShouldRunTestsIndividually(t)
+	testAccAzureRMKubernetesClusterNodePool_orchestratorVersion(t)
+}
+
+func testAccAzureRMKubernetesClusterNodePool_orchestratorVersion(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_kubernetes_cluster_node_pool", "test")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { acceptance.PreCheck(t) },
+		Providers:    acceptance.SupportedProviders,
+		CheckDestroy: testCheckAzureRMKubernetesClusterNodePoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				// both on the same version
+				Config: testAccAzureRMKubernetesClusterNodePool_orchestratorVersionConfig(data, olderKubernetesVersion, olderKubernetesVersion),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckAzureRMKubernetesNodePoolExists(data.ResourceName),
+					resource.TestCheckResourceAttr(data.ResourceName, "orchestrator_version", olderKubernetesVersion),
+				),
+			},
+			data.ImportStep(),
+			{
+				// then update the cluster
+				Config: testAccAzureRMKubernetesClusterNodePool_orchestratorVersionConfig(data, currentKubernetesVersion, olderKubernetesVersion),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckAzureRMKubernetesNodePoolExists(data.ResourceName),
+					resource.TestCheckResourceAttr(data.ResourceName, "orchestrator_version", olderKubernetesVersion),
+				),
+			},
+			data.ImportStep(),
+			{
+				// then update the agent
+				Config: testAccAzureRMKubernetesClusterNodePool_orchestratorVersionConfig(data, currentKubernetesVersion, currentKubernetesVersion),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckAzureRMKubernetesNodePoolExists(data.ResourceName),
+					resource.TestCheckResourceAttr(data.ResourceName, "orchestrator_version", currentKubernetesVersion),
+				),
+			},
+			data.ImportStep(),
+		},
+	})
+}
+
 func TestAccAzureRMKubernetesClusterNodePool_requiresImport(t *testing.T) {
 	checkIfShouldRunTestsIndividually(t)
 	testAccAzureRMKubernetesClusterNodePool_requiresImport(t)
@@ -1229,6 +1273,45 @@ resource "azurerm_kubernetes_cluster_node_pool" "import" {
   node_count            = azurerm_kubernetes_cluster_node_pool.test.node_count
 }
 `, template)
+}
+
+func testAccAzureRMKubernetesClusterNodePool_orchestratorVersionConfig(data acceptance.TestData, clusterVersion, agentVersion string) string {
+	return fmt.Sprintf(`
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "test" {
+  name     = "acctestRG-aks-%d"
+  location = "%s"
+}
+
+resource "azurerm_kubernetes_cluster" "test" {
+  name                 = "acctestaks%d"
+  location             = azurerm_resource_group.test.location
+  resource_group_name  = azurerm_resource_group.test.name
+  dns_prefix           = "acctestaks%d"
+  kubernetes_version   = "%s"
+
+  default_node_pool {
+    name       = "default"
+    node_count = 1
+    vm_size    = "Standard_DS2_v2"
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "test" {
+  name                  = "internal"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.test.id
+  vm_size               = "Standard_DS2_v2"
+  node_count            = 1
+  orchestrator_version  = "%s"
+}
+`, data.RandomInteger, data.Locations.Primary, data.RandomInteger, data.RandomInteger, clusterVersion, agentVersion)
 }
 
 func testAccAzureRMKubernetesClusterNodePool_osDiskSizeGBConfig(data acceptance.TestData) string {

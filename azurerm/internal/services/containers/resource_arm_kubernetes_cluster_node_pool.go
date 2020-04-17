@@ -563,6 +563,7 @@ func resourceArmKubernetesClusterNodePoolRead(d *schema.ResourceData, meta inter
 		if props.OsDiskSizeGB != nil {
 			osDiskSizeGB = int(*props.OsDiskSizeGB)
 		}
+		d.Set("orchestrator_version", props.OrchestratorVersion)
 		d.Set("os_disk_size_gb", osDiskSizeGB)
 		d.Set("os_type", string(props.OsType))
 
@@ -574,10 +575,6 @@ func resourceArmKubernetesClusterNodePoolRead(d *schema.ResourceData, meta inter
 
 		d.Set("vnet_subnet_id", props.VnetSubnetID)
 		d.Set("vm_size", string(props.VMSize))
-
-		if props.OrchestratorVersion != nil {
-			d.Set("orchestrator_version", string(*props.OrchestratorVersion))
-		}
 	}
 
 	return tags.FlattenAndSet(d, resp.Tags)

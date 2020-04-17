@@ -72,6 +72,7 @@ func TestAccAzureRMKubernetes_all(t *testing.T) {
 			"nodeLabels":                     testAccAzureRMKubernetesClusterNodePool_nodeLabels,
 			"nodePublicIP":                   testAccAzureRMKubernetesClusterNodePool_nodePublicIP,
 			"nodeTaints":                     testAccAzureRMKubernetesClusterNodePool_nodeTaints,
+			"orchestratorVersion":            testAccAzureRMKubernetesClusterNodePool_orchestratorVersion,
 			"requiresImport":                 testAccAzureRMKubernetesClusterNodePool_requiresImport,
 			"osDiskSizeGB":                   testAccAzureRMKubernetesClusterNodePool_osDiskSizeGB,
 			"spotDeallocate":                 testAccAzureRMKubernetesClusterNodePool_spotDeallocate,

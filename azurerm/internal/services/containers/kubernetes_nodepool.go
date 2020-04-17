@@ -321,6 +321,11 @@ func FlattenDefaultNodePool(input *[]containerservice.ManagedClusterAgentPoolPro
 		enableNodePublicIP = *agentPool.EnableNodePublicIP
 	}
 
+	evictionPolicy := ""
+	if agentPool.ScaleSetEvictionPolicy != "" {
+		evictionPolicy = string(agentPool.ScaleSetEvictionPolicy)
+	}
+
 	maxCount := 0
 	if agentPool.MaxCount != nil {
 		maxCount = int(*agentPool.MaxCount)
@@ -354,9 +359,19 @@ func FlattenDefaultNodePool(input *[]containerservice.ManagedClusterAgentPoolPro
 		nodeTaints = *agentPool.NodeTaints
 	}
 
+	orchestratorVersion := ""
+	if agentPool.OrchestratorVersion != nil {
+		orchestratorVersion = *agentPool.OrchestratorVersion
+	}
+
 	osDiskSizeGB := 0
 	if agentPool.OsDiskSizeGB != nil {
 		osDiskSizeGB = int(*agentPool.OsDiskSizeGB)
+	}
+
+	priority := string(containerservice.Regular)
+	if agentPool.ScaleSetPriority != "" {
+		priority = string(agentPool.ScaleSetPriority)
 	}
 
 	vnetSubnetId := ""
@@ -364,16 +379,12 @@ func FlattenDefaultNodePool(input *[]containerservice.ManagedClusterAgentPoolPro
 		vnetSubnetId = *agentPool.VnetSubnetID
 	}
 
-	orchestratorVersion := ""
-	if agentPool.OrchestratorVersion != nil {
-		orchestratorVersion = *agentPool.OrchestratorVersion
-	}
-
 	return &[]interface{}{
 		map[string]interface{}{
 			"availability_zones":    availabilityZones,
 			"enable_auto_scaling":   enableAutoScaling,
 			"enable_node_public_ip": enableNodePublicIP,
+			"eviction_policy":       evictionPolicy,
 			"max_count":             maxCount,
 			"max_pods":              maxPods,
 			"min_count":             minCount,
@@ -381,11 +392,12 @@ func FlattenDefaultNodePool(input *[]containerservice.ManagedClusterAgentPoolPro
 			"node_count":            count,
 			"node_labels":           nodeLabels,
 			"node_taints":           nodeTaints,
+			"orchestrator_version":  orchestratorVersion,
 			"os_disk_size_gb":       osDiskSizeGB,
+			"priority":              priority,
 			"tags":                  tags.Flatten(agentPool.Tags),
 			"type":                  string(agentPool.Type),
 			"vm_size":               string(agentPool.VMSize),
-			"orchestrator_version":  string(orchestratorVersion),
 			"vnet_subnet_id":        vnetSubnetId,
 		},
 	}, nil

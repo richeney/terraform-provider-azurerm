@@ -65,6 +65,16 @@ func SchemaDefaultNodePool() *schema.Schema {
 					ForceNew: true,
 				},
 
+				"eviction_policy": {
+					Type:     schema.TypeString,
+					Optional: true,
+					ForceNew: true,
+					ValidateFunc: validation.StringInSlice([]string{
+						string(containerservice.Deallocate),
+						string(containerservice.Delete),
+					}, false),
+				},
+
 				"max_count": {
 					Type:     schema.TypeInt,
 					Optional: true,
@@ -108,8 +118,6 @@ func SchemaDefaultNodePool() *schema.Schema {
 					Elem:     &schema.Schema{Type: schema.TypeString},
 				},
 
-				"tags": tags.Schema(),
-
 				"os_disk_size_gb": {
 					Type:         schema.TypeInt,
 					Optional:     true,
@@ -117,6 +125,19 @@ func SchemaDefaultNodePool() *schema.Schema {
 					Computed:     true,
 					ValidateFunc: validation.IntAtLeast(1),
 				},
+
+				"priority": {
+					Type:     schema.TypeString,
+					Optional: true,
+					ForceNew: true,
+					Default:  string(containerservice.Regular),
+					ValidateFunc: validation.StringInSlice([]string{
+						string(containerservice.Regular),
+						string(containerservice.Spot),
+					}, false),
+				},
+
+				"tags": tags.Schema(),
 
 				"vnet_subnet_id": {
 					Type:         schema.TypeString,

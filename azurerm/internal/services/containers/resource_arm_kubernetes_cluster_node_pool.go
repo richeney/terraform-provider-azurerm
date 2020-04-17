@@ -90,6 +90,16 @@ func resourceArmKubernetesClusterNodePool() *schema.Resource {
 				Optional: true,
 			},
 
+			"eviction_policy": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				ValidateFunc: validation.StringInSlice([]string{
+					string(containerservice.Deallocate),
+					string(containerservice.Delete),
+				}, false),
+			},
+
 			"max_count": {
 				Type:     schema.TypeInt,
 				Optional: true,
@@ -145,21 +155,18 @@ func resourceArmKubernetesClusterNodePool() *schema.Resource {
 				}, false),
 			},
 
-			"vnet_subnet_id": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: azure.ValidateResourceID,
-			},
-
 			"priority": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: azure.ValidateResourceID,
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				Default:  string(containerservice.Regular),
+				ValidateFunc: validation.StringInSlice([]string{
+					string(containerservice.Regular),
+					string(containerservice.Spot),
+				}, false),
 			},
 
-			"eviction_policy": {
+			"vnet_subnet_id": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
@@ -246,6 +253,10 @@ func resourceArmKubernetesClusterNodePoolCreate(d *schema.ResourceData, meta int
 		profile.AvailabilityZones = availabilityZones
 	}
 
+	if policy := d.Get("eviction_policy").(string); policy != "" {
+		profile.ScaleSetEvictionPolicy = containerservice.ScaleSetEvictionPolicy(policy)
+	}
+
 	if maxPods := int32(d.Get("max_pods").(int)); maxPods > 0 {
 		profile.MaxPods = utils.Int32(maxPods)
 	}
@@ -264,17 +275,13 @@ func resourceArmKubernetesClusterNodePoolCreate(d *schema.ResourceData, meta int
 		profile.OsDiskSizeGB = utils.Int32(int32(osDiskSizeGB))
 	}
 
+	if priority := d.Get("priority").(string); priority != "" {
+		profile.ScaleSetPriority = containerservice.ScaleSetPriority(priority)
+	}
+
 	if vnetSubnetID := d.Get("vnet_subnet_id").(string); vnetSubnetID != "" {
 		profile.VnetSubnetID = utils.String(vnetSubnetID)
 	}
-
-	// if priority := d.Get("priority").(string); priority != "" {
-	// 	profile.ScaleSetPriority = utils.String(priority)
-	// }
-
-	// if eviction_policy := d.Get("eviction_policy").(string); eviction_policy != "" {
-	// 	profile.ScaleSetEvictionPolicy = utils.String(eviction_policy)
-	// }
 
 	maxCount := d.Get("max_count").(int)
 	minCount := d.Get("min_count").(int)
@@ -497,6 +504,12 @@ func resourceArmKubernetesClusterNodePoolRead(d *schema.ResourceData, meta inter
 		d.Set("enable_auto_scaling", props.EnableAutoScaling)
 		d.Set("enable_node_public_ip", props.EnableNodePublicIP)
 
+		evictionPolicy := ""
+		if props.ScaleSetEvictionPolicy != "" {
+			evictionPolicy = string(props.ScaleSetEvictionPolicy)
+		}
+		d.Set("eviction_policy", evictionPolicy)
+
 		maxCount := 0
 		if props.MaxCount != nil {
 			maxCount = int(*props.MaxCount)
@@ -535,10 +548,15 @@ func resourceArmKubernetesClusterNodePoolRead(d *schema.ResourceData, meta inter
 		}
 		d.Set("os_disk_size_gb", osDiskSizeGB)
 		d.Set("os_type", string(props.OsType))
+
+		priority := string(containerservice.Regular)
+		if props.ScaleSetPriority != "" {
+			priority = string(props.ScaleSetPriority)
+		}
+		d.Set("priority", priority)
+
 		d.Set("vnet_subnet_id", props.VnetSubnetID)
 		d.Set("vm_size", string(props.VMSize))
-		d.Set("priority", string(props.ScaleSetPriority))
-		d.Set("eviction_policy", string(props.ScaleSetEvictionPolicy))
 	}
 
 	return tags.FlattenAndSet(d, resp.Tags)

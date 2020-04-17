@@ -715,71 +715,94 @@ func flattenKubernetesClusterDataSourceAgentPoolProfiles(input *[]containerservi
 	}
 
 	for _, profile := range *input {
-		agentPoolProfile := make(map[string]interface{})
-
+		agentPoolType := ""
 		if profile.Type != "" {
-			agentPoolProfile["type"] = string(profile.Type)
+			agentPoolType = string(profile.Type)
 		}
 
+		count := 0
 		if profile.Count != nil {
-			agentPoolProfile["count"] = int(*profile.Count)
+			count = int(*profile.Count)
 		}
 
-		if profile.MinCount != nil {
-			agentPoolProfile["min_count"] = int(*profile.MinCount)
-		}
-
-		if profile.MaxCount != nil {
-			agentPoolProfile["max_count"] = int(*profile.MaxCount)
-		}
-
+		enableAutoScaling := false
 		if profile.EnableAutoScaling != nil {
-			agentPoolProfile["enable_auto_scaling"] = *profile.EnableAutoScaling
+			enableAutoScaling = *profile.EnableAutoScaling
 		}
 
-		agentPoolProfile["availability_zones"] = utils.FlattenStringSlice(profile.AvailabilityZones)
-
-		if profile.Name != nil {
-			agentPoolProfile["name"] = *profile.Name
-		}
-
-		if profile.VMSize != "" {
-			agentPoolProfile["vm_size"] = string(profile.VMSize)
-		}
-
-		if profile.OsDiskSizeGB != nil {
-			agentPoolProfile["os_disk_size_gb"] = int(*profile.OsDiskSizeGB)
-		}
-
-		if profile.VnetSubnetID != nil {
-			agentPoolProfile["vnet_subnet_id"] = *profile.VnetSubnetID
-		}
-
-		if profile.OsType != "" {
-			agentPoolProfile["os_type"] = string(profile.OsType)
-		}
-
-		if profile.MaxPods != nil {
-			agentPoolProfile["max_pods"] = int(*profile.MaxPods)
-		}
-
-		if profile.NodeLabels != nil {
-			agentPoolProfile["node_labels"] = profile.NodeLabels
-		}
-
-		if profile.NodeTaints != nil {
-			agentPoolProfile["node_taints"] = *profile.NodeTaints
-		}
-
+		enableNodePublicIP := false
 		if profile.EnableNodePublicIP != nil {
-			agentPoolProfile["enable_node_public_ip"] = *profile.EnableNodePublicIP
+			enableNodePublicIP = *profile.EnableNodePublicIP
 		}
 
-		if profile.Tags != nil {
-			agentPoolProfile["tags"] = tags.Flatten(profile.Tags)
+		maxCount := 0
+		if profile.MaxCount != nil {
+			maxCount = int(*profile.MaxCount)
 		}
 
-		agentPoolProfiles = append(agentPoolProfiles, agentPoolProfile)
+		maxPods := 0
+		if profile.MaxPods != nil {
+			maxPods = int(*profile.MaxPods)
+		}
+
+		minCount := 0
+		if profile.MinCount != nil {
+			minCount = int(*profile.MinCount)
+		}
+
+		name := ""
+		if profile.Name != nil {
+			name = *profile.Name
+		}
+
+		nodeLabels := make(map[string]*string, 0)
+		if profile.NodeLabels != nil {
+			nodeLabels = profile.NodeLabels
+		}
+
+		nodeTaints := make([]string, 0)
+		if profile.NodeTaints != nil {
+			nodeTaints = *profile.NodeTaints
+		}
+
+		osDiskSizeGb := 0
+		if profile.OsDiskSizeGB != nil {
+			osDiskSizeGb = int(*profile.OsDiskSizeGB)
+		}
+
+		osType := ""
+		if profile.OsType != "" {
+			osType = string(profile.OsType)
+		}
+
+		vmSize := ""
+		if profile.VMSize != "" {
+			vmSize = string(profile.VMSize)
+		}
+
+		vnetSubnetId := ""
+		if profile.VnetSubnetID != nil {
+			vnetSubnetId = *profile.VnetSubnetID
+		}
+
+		agentPoolProfiles = append(agentPoolProfiles, map[string]interface{}{
+			"availability_zones":    utils.FlattenStringSlice(profile.AvailabilityZones),
+			"count":                 count,
+			"enable_auto_scaling":   enableAutoScaling,
+			"enable_node_public_ip": enableNodePublicIP,
+			"max_count":             maxCount,
+			"min_count":             minCount,
+			"max_pods":              maxPods,
+			"name":                  name,
+			"node_labels":           nodeLabels,
+			"node_taints":           nodeTaints,
+			"os_disk_size_gb":       osDiskSizeGb,
+			"os_type":               osType,
+			"tags":                  tags.Flatten(profile.Tags),
+			"type":                  agentPoolType,
+			"vm_size":               vmSize,
+			"vnet_subnet_id":        vnetSubnetId,
+		})
 	}
 
 	return agentPoolProfiles

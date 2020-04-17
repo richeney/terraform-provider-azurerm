@@ -94,6 +94,10 @@ The following arguments are supported:
 
 -> **NOTE:** When `priority` is set to `Spot` an `eviction_policy` must be specified.
 
+* `spot_max_price` - (Optional) The maximum price you're willing to pay for each Virtual Machine in the Node Pool, in US Dollars; which must be greater than the current spot price. If this bid price falls below the current spot price the Virtual Machines in the Node Pool will be evicted using the `eviction_policy`. Defaults to `-1`, which means that each Virtual Machines in the Node Pool should not be evicted for price reasons.
+
+-> **NOTE:** This can only be configured when `priority` is set to `Spot`.
+
 * `tags` - (Optional) A mapping of tags to assign to the resource.
 
 ~> At this time there's a bug in the AKS API where Tags for a Node Pool are not stored in the correct case - you [may wish to use Terraform's `ignore_changes` functionality to ignore changes to the casing](https://www.terraform.io/docs/configuration/resources.html#ignore_changes) until this is fixed in the AKS API.

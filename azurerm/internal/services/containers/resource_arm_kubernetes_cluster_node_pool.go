@@ -136,6 +136,13 @@ func resourceArmKubernetesClusterNodePool() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 
+			"orchestrator_version": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringIsNotEmpty,
+			},
+
 			"os_disk_size_gb": {
 				Type:         schema.TypeInt,
 				Optional:     true,
@@ -166,18 +173,18 @@ func resourceArmKubernetesClusterNodePool() *schema.Resource {
 				}, false),
 			},
 
+			"spot_max_price": {
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				Default:      -1,
+				ValidateFunc: validation.FloatAtLeast(-1.0),
+			},
+
 			"vnet_subnet_id": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: azure.ValidateResourceID,
-			},
-
-			"orchestrator_version": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				ValidateFunc: validation.StringIsNotEmpty,
 			},
 		},
 	}
@@ -255,11 +262,6 @@ func resourceArmKubernetesClusterNodePoolCreate(d *schema.ResourceData, meta int
 		Count: utils.Int32(int32(count)),
 	}
 
-	orchestratorVersion := d.Get("orchestrator_version").(string)
-	if orchestratorVersion != "" {
-		profile.OrchestratorVersion = utils.String(orchestratorVersion)
-	}
-
 	availabilityZonesRaw := d.Get("availability_zones").([]interface{})
 	if availabilityZones := utils.ExpandStringSlice(availabilityZonesRaw); len(*availabilityZones) > 0 {
 		profile.AvailabilityZones = availabilityZones
@@ -283,6 +285,10 @@ func resourceArmKubernetesClusterNodePoolCreate(d *schema.ResourceData, meta int
 		profile.NodeTaints = nodeTaints
 	}
 
+	if version := d.Get("orchestrator_version").(string); version != "" {
+		profile.OrchestratorVersion = utils.String(version)
+	}
+
 	if osDiskSizeGB := d.Get("os_disk_size_gb").(int); osDiskSizeGB > 0 {
 		profile.OsDiskSizeGB = utils.Int32(int32(osDiskSizeGB))
 	}
@@ -291,8 +297,31 @@ func resourceArmKubernetesClusterNodePoolCreate(d *schema.ResourceData, meta int
 		profile.ScaleSetPriority = containerservice.ScaleSetPriority(priority)
 	}
 
+	profile.SpotMaxPrice = utils.Float(d.Get("spot_max_price").(float64))
+
 	if vnetSubnetID := d.Get("vnet_subnet_id").(string); vnetSubnetID != "" {
 		profile.VnetSubnetID = utils.String(vnetSubnetID)
+	}
+
+	hasEvictionPolicy := profile.ScaleSetEvictionPolicy != ""
+	hasPrice := profile.SpotMaxPrice != nil
+	if profile.ScaleSetPriority == containerservice.Spot {
+		if !hasEvictionPolicy {
+			return fmt.Errorf("`eviction_policy` must be specified when `priority` is set to `Spot`")
+		}
+		if !hasPrice {
+			return fmt.Errorf("`spot_max_price` must be specified when `priority` is set to `Spot`")
+		}
+	} else {
+		if hasEvictionPolicy {
+			return fmt.Errorf("`eviction_policy` can only be specified when `priority` is set to `Spot`")
+		}
+		if hasPrice && *profile.SpotMaxPrice != -1 {
+			return fmt.Errorf("`spot_max_price` can only be specified when `priority` is set to `Spot`")
+		}
+
+		// there's no point sending -1, so let's remove it
+		profile.SpotMaxPrice = nil
 	}
 
 	maxCount := d.Get("max_count").(int)
@@ -425,9 +454,27 @@ func resourceArmKubernetesClusterNodePoolUpdate(d *schema.ResourceData, meta int
 		props.OrchestratorVersion = utils.String(d.Get("orchestrator_version").(string))
 	}
 
+	if d.HasChange("spot_max_price") {
+		props.SpotMaxPrice = utils.Float(d.Get("spot_max_price").(float64))
+	}
+
 	if d.HasChange("tags") {
 		t := d.Get("tags").(map[string]interface{})
 		props.Tags = tags.Expand(t)
+	}
+
+	hasPrice := props.SpotMaxPrice != nil
+	if props.ScaleSetPriority == containerservice.Spot {
+		if !hasPrice {
+			return fmt.Errorf("`spot_max_price` must be specified when `priority` is set to `Spot`")
+		}
+	} else {
+		if hasPrice && *props.SpotMaxPrice != -1 {
+			return fmt.Errorf("`spot_max_price` can only be specified when `priority` is set to `Spot`")
+		}
+
+		// there's no point sending -1, so let's remove it
+		props.SpotMaxPrice = nil
 	}
 
 	// validate the auto-scale fields are both set/unset to prevent a continual diff

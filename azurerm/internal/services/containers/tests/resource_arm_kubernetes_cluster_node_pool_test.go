@@ -563,6 +563,40 @@ func testAccAzureRMKubernetesClusterNodePool_osDiskSizeGB(t *testing.T) {
 	})
 }
 
+func TestAccAzureRMKubernetesClusterNodePool_spotCustomPrice(t *testing.T) {
+	checkIfShouldRunTestsIndividually(t)
+	testAccAzureRMKubernetesClusterNodePool_spotCustomPrice(t)
+}
+
+func testAccAzureRMKubernetesClusterNodePool_spotCustomPrice(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_kubernetes_cluster_node_pool", "test")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { acceptance.PreCheck(t) },
+		Providers:    acceptance.SupportedProviders,
+		CheckDestroy: testCheckAzureRMKubernetesClusterNodePoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAzureRMKubernetesClusterNodePool_spotConfigCustomPrice(data, "Delete", 0.6),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckAzureRMKubernetesNodePoolExists(data.ResourceName),
+					resource.TestCheckResourceAttr(data.ResourceName, "eviction_policy", "Delete"),
+					resource.TestCheckResourceAttr(data.ResourceName, "priority", "Spot"),
+				),
+			},
+			data.ImportStep(),
+			{
+				Config: testAccAzureRMKubernetesClusterNodePool_spotConfigCustomPrice(data, "Delete", 0.5),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckAzureRMKubernetesNodePoolExists(data.ResourceName),
+					resource.TestCheckResourceAttr(data.ResourceName, "eviction_policy", "Delete"),
+					resource.TestCheckResourceAttr(data.ResourceName, "priority", "Spot"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccAzureRMKubernetesClusterNodePool_spotDeallocate(t *testing.T) {
 	checkIfShouldRunTestsIndividually(t)
 	testAccAzureRMKubernetesClusterNodePool_spotDeallocate(t)
@@ -589,12 +623,12 @@ func testAccAzureRMKubernetesClusterNodePool_spotDeallocate(t *testing.T) {
 	})
 }
 
-func TestAccAzureRMKubernetesClusterNodePool_spotDestroy(t *testing.T) {
+func TestAccAzureRMKubernetesClusterNodePool_spotDelete(t *testing.T) {
 	checkIfShouldRunTestsIndividually(t)
-	testAccAzureRMKubernetesClusterNodePool_spotDestroy(t)
+	testAccAzureRMKubernetesClusterNodePool_spotDelete(t)
 }
 
-func testAccAzureRMKubernetesClusterNodePool_spotDestroy(t *testing.T) {
+func testAccAzureRMKubernetesClusterNodePool_spotDelete(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_kubernetes_cluster_node_pool", "test")
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -603,10 +637,10 @@ func testAccAzureRMKubernetesClusterNodePool_spotDestroy(t *testing.T) {
 		CheckDestroy: testCheckAzureRMKubernetesClusterNodePoolDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccAzureRMKubernetesClusterNodePool_spotConfig(data, "Destroy"),
+				Config: testAccAzureRMKubernetesClusterNodePool_spotConfig(data, "Delete"),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckAzureRMKubernetesNodePoolExists(data.ResourceName),
-					resource.TestCheckResourceAttr(data.ResourceName, "eviction_policy", "Destroy"),
+					resource.TestCheckResourceAttr(data.ResourceName, "eviction_policy", "Delete"),
 					resource.TestCheckResourceAttr(data.ResourceName, "priority", "Spot"),
 				),
 			},
@@ -1353,6 +1387,29 @@ resource "azurerm_kubernetes_cluster_node_pool" "test" {
   eviction_policy       = "%s"
 }
 `, template, evictionPolicy)
+}
+
+func testAccAzureRMKubernetesClusterNodePool_spotConfigCustomPrice(data acceptance.TestData, evictionPolicy string, customPrice float64) string {
+	template := testAccAzureRMKubernetesClusterNodePool_templateConfig(data)
+	return fmt.Sprintf(`
+provider "azurerm" {
+  features {}
+}
+
+%s
+
+resource "azurerm_kubernetes_cluster_node_pool" "test" {
+  name                  = "internal"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.test.id
+  vm_size               = "Standard_DS2_v2"
+  enable_auto_scaling   = true
+  min_count             = 1
+  max_count             = 3
+  priority              = "Spot"
+  eviction_policy       = "%s"
+  spot_max_price        = %.1f
+}
+`, template, evictionPolicy, customPrice)
 }
 
 func testAccAzureRMKubernetesClusterNodePool_virtualNetworkAutomaticConfig(data acceptance.TestData) string {

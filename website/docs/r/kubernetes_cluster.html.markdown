@@ -209,6 +209,10 @@ A `default_node_pool` block supports the following:
 
 * `os_disk_size_gb` - (Optional) The size of the OS Disk which should be used for each agent in the Node Pool. Changing this forces a new resource to be created.
 
+* `spot_max_price` - (Optional) The maximum price you're willing to pay for each Virtual Machine in the Node Pool, in US Dollars; which must be greater than the current spot price. If this bid price falls below the current spot price the Virtual Machines in the Node Pool will be evicted using the `eviction_policy`. Defaults to `-1`, which means that each Virtual Machines in the Node Pool should not be evicted for price reasons.
+
+-> **NOTE:** This can only be configured when `priority` is set to `Spot`.
+
 * `type` - (Optional) The type of Node Pool which should be created. Possible values are `AvailabilitySet` and `VirtualMachineScaleSets`. Defaults to `VirtualMachineScaleSets`.
 
 * `tags` - (Optional) A mapping of tags to assign to the Node Pool.

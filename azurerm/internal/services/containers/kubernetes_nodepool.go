@@ -144,6 +144,13 @@ func SchemaDefaultNodePool() *schema.Schema {
 					}, false),
 				},
 
+				"spot_max_price": {
+					Type:         schema.TypeFloat,
+					Optional:     true,
+					Default:      -1,
+					ValidateFunc: validation.FloatAtLeast(-1.0),
+				},
+
 				"tags": tags.Schema(),
 
 				"vnet_subnet_id": {
@@ -177,6 +184,7 @@ func ConvertDefaultNodePoolToAgentPool(input *[]containerservice.ManagedClusterA
 			EnableNodePublicIP:     defaultCluster.EnableNodePublicIP,
 			ScaleSetPriority:       defaultCluster.ScaleSetPriority,
 			ScaleSetEvictionPolicy: defaultCluster.ScaleSetEvictionPolicy,
+			SpotMaxPrice:           defaultCluster.SpotMaxPrice,
 			NodeLabels:             defaultCluster.NodeLabels,
 			NodeTaints:             defaultCluster.NodeTaints,
 			Tags:                   defaultCluster.Tags,
@@ -209,11 +217,6 @@ func ExpandDefaultNodePool(d *schema.ResourceData) (*[]containerservice.ManagedC
 		// Pods not in Running status: coredns-7fc597cc45-v5z7x,coredns-autoscaler-7ccc76bfbd-djl7j,metrics-server-cbd95f966-5rl97,tunnelfront-7d9884977b-wpbvn
 		// Windows agents can be configured via the separate node pool resource
 		OsType: containerservice.Linux,
-
-		// // TODO: support these in time
-		// OrchestratorVersion:    nil,
-		ScaleSetEvictionPolicy: containerservice.ScaleSetEvictionPolicy(raw["eviction_policy"].(string)),
-		ScaleSetPriority:       containerservice.ScaleSetPriority(raw["priority"].(string)),
 	}
 
 	availabilityZonesRaw := raw["availability_zones"].([]interface{})
@@ -224,6 +227,10 @@ func ExpandDefaultNodePool(d *schema.ResourceData) (*[]containerservice.ManagedC
 		profile.AvailabilityZones = availabilityZones
 	}
 
+	if policy := raw["eviction_policy"].(string); policy != "" {
+		profile.ScaleSetEvictionPolicy = containerservice.ScaleSetEvictionPolicy(policy)
+	}
+
 	if maxPods := int32(raw["max_pods"].(int)); maxPods > 0 {
 		profile.MaxPods = utils.Int32(maxPods)
 	}
@@ -232,12 +239,39 @@ func ExpandDefaultNodePool(d *schema.ResourceData) (*[]containerservice.ManagedC
 		profile.OsDiskSizeGB = utils.Int32(osDiskSizeGB)
 	}
 
+	if orchestratorVersion := raw["orchestrator_version"].(string); orchestratorVersion != "" {
+		profile.OrchestratorVersion = utils.String(orchestratorVersion)
+	}
+
+	if priority := raw["priority"].(string); priority != "" {
+		profile.ScaleSetPriority = containerservice.ScaleSetPriority(priority)
+	}
+
+	profile.SpotMaxPrice = utils.Float(raw["spot_max_price"].(float64))
+
 	if vnetSubnetID := raw["vnet_subnet_id"].(string); vnetSubnetID != "" {
 		profile.VnetSubnetID = utils.String(vnetSubnetID)
 	}
 
-	if orchestratorVersion := raw["orchestrator_version"].(string); orchestratorVersion != "" {
-		profile.OrchestratorVersion = utils.String(orchestratorVersion)
+	hasEvictionPolicy := profile.ScaleSetEvictionPolicy != ""
+	hasPrice := profile.SpotMaxPrice != nil
+	if profile.ScaleSetPriority == containerservice.Spot {
+		if !hasEvictionPolicy {
+			return nil, fmt.Errorf("`eviction_policy` must be specified when `priority` is set to `Spot`")
+		}
+		if !hasPrice {
+			return nil, fmt.Errorf("`spot_max_price` must be specified when `priority` is set to `Spot`")
+		}
+	} else {
+		if hasEvictionPolicy {
+			return nil, fmt.Errorf("`eviction_policy` can only be specified when `priority` is set to `Spot`")
+		}
+		if hasPrice && *profile.SpotMaxPrice != -1 {
+			return nil, fmt.Errorf("`spot_max_price` can only be specified when `priority` is set to `Spot`")
+		}
+
+		// there's no point sending -1, so let's remove it
+		profile.SpotMaxPrice = nil
 	}
 
 	count := raw["node_count"].(int)

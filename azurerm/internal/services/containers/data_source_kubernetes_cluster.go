@@ -770,13 +770,14 @@ func flattenKubernetesClusterDataSourceAgentPoolProfiles(input *[]containerservi
 			nodeLabels = profile.NodeLabels
 		}
 
-		if *profile.OrchestratorVersion != "" {
-			agentPoolProfile["orchestrator_version"] = string(*profile.OrchestratorVersion)
-		}
-
 		nodeTaints := make([]string, 0)
 		if profile.NodeTaints != nil {
 			nodeTaints = *profile.NodeTaints
+		}
+
+		orchestrationVersion := ""
+		if *profile.OrchestratorVersion != "" {
+			orchestrationVersion = *profile.OrchestratorVersion
 		}
 
 		osDiskSizeGb := 0
@@ -816,6 +817,7 @@ func flattenKubernetesClusterDataSourceAgentPoolProfiles(input *[]containerservi
 			"name":                  name,
 			"node_labels":           nodeLabels,
 			"node_taints":           nodeTaints,
+			"orchestrator_version":  orchestrationVersion,
 			"os_disk_size_gb":       osDiskSizeGb,
 			"os_type":               osType,
 			"priority":              priority,

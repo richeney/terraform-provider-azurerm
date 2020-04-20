@@ -620,6 +620,12 @@ func resourceArmKubernetesClusterNodePoolRead(d *schema.ResourceData, meta inter
 		}
 		d.Set("priority", priority)
 
+		spotMaxPrice := float64(-1)
+		if props.SpotMaxPrice != nil {
+			spotMaxPrice = *props.SpotMaxPrice
+		}
+		d.Set("spot_max_price", spotMaxPrice)
+
 		d.Set("vnet_subnet_id", props.VnetSubnetID)
 		d.Set("vm_size", string(props.VMSize))
 	}

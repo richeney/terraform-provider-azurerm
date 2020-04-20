@@ -381,15 +381,14 @@ func FlattenDefaultNodePool(input *[]containerservice.ManagedClusterAgentPoolPro
 		name = *agentPool.Name
 	}
 
-	var nodeLabels map[string]string
+	nodeLabels := make(map[string]string)
 	if agentPool.NodeLabels != nil {
-		nodeLabels = make(map[string]string)
 		for k, v := range agentPool.NodeLabels {
 			nodeLabels[k] = *v
 		}
 	}
 
-	var nodeTaints []string
+	nodeTaints := make([]string, 0)
 	if agentPool.NodeTaints != nil {
 		nodeTaints = *agentPool.NodeTaints
 	}
@@ -407,6 +406,11 @@ func FlattenDefaultNodePool(input *[]containerservice.ManagedClusterAgentPoolPro
 	priority := string(containerservice.Regular)
 	if agentPool.ScaleSetPriority != "" {
 		priority = string(agentPool.ScaleSetPriority)
+	}
+
+	spotMaxPrice := float64(-1)
+	if agentPool.SpotMaxPrice != nil {
+		spotMaxPrice = *agentPool.SpotMaxPrice
 	}
 
 	vnetSubnetId := ""
@@ -430,6 +434,7 @@ func FlattenDefaultNodePool(input *[]containerservice.ManagedClusterAgentPoolPro
 			"orchestrator_version":  orchestratorVersion,
 			"os_disk_size_gb":       osDiskSizeGB,
 			"priority":              priority,
+			"spot_max_price":        spotMaxPrice,
 			"tags":                  tags.Flatten(agentPool.Tags),
 			"type":                  string(agentPool.Type),
 			"vm_size":               string(agentPool.VMSize),

@@ -36,7 +36,7 @@ The following arguments are supported:
 
 * `resource_group_name` - (Required) The name of the Resource Group where the Search Service should exist. Changing this forces a new Search Service to be created.
 
-* `sku` - (Required) The SKU which should be used for this Search Service. Possible values are `basic`, `free`, `standard`, `standard2` and `standard3` Changing this forces a new Search Service to be created.
+* `sku` - (Required) The SKU which should be used for this Search Service. Possible values are `basic`, `free`, `standard`, `standard2`, `standard3`, `storage_optimized_l1` and `storage_optimized_l2`. Changing this forces a new Search Service to be created.
 
 -> The `basic` and `free` SKU's provision the Search Service in a Shared Cluster - the `standard` SKU's use a Dedicated Cluster.
 
@@ -44,11 +44,15 @@ The following arguments are supported:
 
 ---
 
+* `public_network_access_enabled` - (Optional) Whether or not public network access is allowed for this resource. Defaults to `true`.
+
 * `partition_count` - (Optional) The number of partitions which should be created.
 
 * `replica_count` - (Optional) The number of replica's which should be created.
 
 -> **Note:** `partition_count` and `replica_count` can only be configured when using a `standard` sku.
+
+* `allowed_ips` - (Optional) A list of IPv4 addresses that are allowed access to the search service endpoint. 
 
 * `tags` - (Optional) A mapping of tags which should be assigned to the Search Service.
 
